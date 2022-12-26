@@ -1,0 +1,41 @@
+import sqlite3
+import pandas as pd
+sql = sqlite3.connect('hip_hop_all_stars.db')
+genre = ["UnderGround", "Classic_Hip_Hop","Stuffed_rap", "New_school"]
+genre_df = pd.DataFrame({'name_genre': genre})
+genre_df.to_sql('genre', sql, index_label="id", if_exists='replace')
+# print(pd.read_sql("SELECT * FROM genre", sql))
+mc = ["Оу_74", "Смоки_Мо", "Dots_family", "Suicide_Boyz", "2Pac", "Bad_Balance", "Radical_Dreamer"]
+mc_df = pd.DataFrame({'name_mc':mc})
+mc_df.to_sql('mc', sql, index_label="id", if_exists="replace")
+# print(pd.read_sql("SELECT * FROM mc", sql))
+banger =['Холод', "Было и было", "В жизни так бывает", "Щемит в душе тоска", "Buckhead", "Better days", "Городская тоска", "Снег идет"]
+mc_id = [0, 1, 2, 2, 3, 4, 5, 6]
+genre_id = [0, 1, 1, 1, 3, 1, 1, 2]
+flow = [0.5, 0.6, 0.4, 0.4, 0.7, 0.8, 0.5, 0.2]
+velocity = [100, 150, 80, 80, 200, 90, 90, 70]
+
+track_df = pd.DataFrame({
+    'banger': banger,
+    'mc_id' : mc_id,
+    'genre_id': genre_id,
+    'flow': flow,
+    'velocity': velocity
+})
+# print(track_df)
+track_df.to_sql("track", sql, index_label="id", if_exists="replace")
+# print(pd.read_sql("SELECT * FROM track", sql))
+print(pd.read_sql(
+    """
+    SELECT tr.banger, tr.flow, tr.velocity AS velo, mc.name_mc, ge.name_genre, tr.banger||' -'||mc.name_mc AS "Трек/автор",
+    CASE WHEN tr.flow BETWEEN 0.4 AND 0.5
+    THEN "Средняя_читка"
+    WHEN tr.flow>0.5
+    THEN "Быстрая читка"
+    ELSE "Медленная читка"
+    END AS "Скорость_рэперов"  
+    FROM track tr LEFT JOIN mc ON trim(tr.mc_id)=trim(mc.id) LEFT JOIN genre ge ON trim(tr.genre_id) = trim(ge.id)
+    ORDER BY tr.velocity DESC
+    """,
+    sql
+))
